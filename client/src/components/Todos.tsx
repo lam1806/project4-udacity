@@ -27,13 +27,18 @@ interface TodosState {
   todos: Todo[]
   newTodoName: string
   loadingTodos: boolean
+  error: string
+  
+  attachmentUrl: string
 }
 
 export class Todos extends React.PureComponent<TodosProps, TodosState> {
   state: TodosState = {
     todos: [],
     newTodoName: '',
-    loadingTodos: true
+    loadingTodos: true,
+    error: '',
+    attachmentUrl: ''
   }
 
   handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,16 +50,34 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
   }
 
   onTodoCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+    
     try {
+
+      const { newTodoName } = this.state;
+  
+      if (newTodoName === '') {
+        this.setState({ error:  'Can not be empty'});
+        return;
+      }
+      else if (newTodoName.length > 5) {
+        this.setState({ error: 'Todo name cannot exceed 5 characters' });
+        return;
+      }
+      else{
+      
       const dueDate = this.calculateDueDate()
       const newTodo = await createTodo(this.props.auth.getIdToken(), {
         name: this.state.newTodoName,
-        dueDate
+        dueDate,
+       
       })
       this.setState({
         todos: [...this.state.todos, newTodo],
-        newTodoName: ''
+        newTodoName: '',
+        
+        
       })
+      }
     } catch {
       alert('Todo creation failed')
     }
@@ -114,6 +137,8 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
   }
 
   renderCreateTodoInput() {
+    const { error } = this.state;
+  
     return (
       <Grid.Row>
         <Grid.Column width={16}>
@@ -129,14 +154,17 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
             actionPosition="left"
             placeholder="To change the world..."
             onChange={this.handleNameChange}
+            error={!!error} // Add error prop to indicate error state
           />
+          {error && <div style={{ color: 'red' }}>{error}</div>} 
         </Grid.Column>
         <Grid.Column width={16}>
           <Divider />
         </Grid.Column>
       </Grid.Row>
-    )
+    );
   }
+  
 
   renderTodos() {
     if (this.state.loadingTodos) {
@@ -156,10 +184,14 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
     )
   }
 
+
   renderTodosList() {
+    
+
     return (
       <Grid padded>
         {this.state.todos.map((todo, pos) => {
+          console.log(todo, 'todo');
           return (
             <Grid.Row key={todo.todoId}>
               <Grid.Column width={1} verticalAlign="middle">
@@ -192,9 +224,9 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
                   <Icon name="delete" />
                 </Button>
               </Grid.Column>
-              {todo.attachmentUrl && (
+              {todo.attachmentUrl ? (
                 <Image src={todo.attachmentUrl} size="small" wrapped />
-              )}
+              ) : <></>}
               <Grid.Column width={16}>
                 <Divider />
               </Grid.Column>
