@@ -18,7 +18,7 @@ export function createToDo(
       userId: userId,
       todoId: todoId,
       createdAt: new Date().getTime().toString(),
-      attachmentUrl: urlAttachment,
+      attachmentUrl: `${urlAttachment}`,
       done: false,
       ...createTodoRequest
     })

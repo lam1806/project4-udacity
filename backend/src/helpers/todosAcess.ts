@@ -2,24 +2,27 @@ import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { S3 } from 'aws-sdk'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
+import { Attachment } from './Attachments';
+import { createLogger } from '../../src/utils/logger';
+
+const logger = createLogger('TodosAccess')
 
 export class AllToDoAccess {
   private readonly docClient: DocumentClient
   private readonly s3Client: S3
   private readonly todoTable: string
-  private readonly s3BucketName: string
+  private readonly s3BucketName= process.env.ATTACHMENT_S3_BUCKET_VALUE;
 
   constructor(
     docClient?: DocumentClient,
     s3Client?: S3,
     todoTable?: string,
-    s3BucketName?: string
+    //s3BucketName?: string
   ) {
     this.docClient = docClient || new DocumentClient()
     this.s3Client = s3Client || new S3({ signatureVersion: 'v4' })
     this.todoTable = todoTable || process.env.TODOS_TABLE || ''
-    this.s3BucketName =
-      s3BucketName || process.env.ATTACHMENT_S3_BUCKET_VALUE || ''
+    //this.s3BucketName = s3BucketName || process.env.ATTACHMENT_S3_BUCKET_VALUE || ''
   }
 
   public async getAllToDo(userId: string): Promise<TodoItem[]> {
@@ -56,39 +59,34 @@ export class AllToDoAccess {
     return todoItem
   }
 
-  public async updateToDo(
-    update: TodoUpdate,
-    todoId: string,
-    userId: string
-  ): Promise<TodoUpdate> {
-    console.log('Updating todo')
+  public async updateTodo( todo: TodoUpdate, userId: string, todoId: string ) {
+    if (userId) {
+        logger.info(`Found todo ${todoId}, ready for update`);
+        console.log("updateTodo")
+        await this.docClient.update({
+            TableName: this.todoTable,
+            Key: {
+                todoId,
+                userId
+            },
+            UpdateExpression: "set #name = :name, #dueDate = :dueDate, #done = :done",
+            ExpressionAttributeNames: {
+                "#name": "name",
+                "#dueDate": "dueDate",
+                "#done": "done"
+            },
+            ExpressionAttributeValues: {
+                ":name": todo.name,
+                ":dueDate": todo.dueDate,
+                ":done": todo.done
+            }
+        }).promise();
 
-    const params: DocumentClient.UpdateItemInput = {
-      TableName: this.todoTable,
-      Key: {
-        userId,
-        todoId
-      },
-      UpdateExpression: 'set #nameItem = :nameItem, #dueDateItem = :dueDateItem, #doneITem = :doneItem',
-      ExpressionAttributeNames: {
-        '#nameItem': 'name',
-        '#doneITem': 'done',
-        '#dueDateItem': 'dueDate'
-      },
-      ExpressionAttributeValues: {
-        ':nameItem': update.name,
-        ':doneITem': update.done,
-        ':dueDateItem': update.dueDate
-      },
-      ReturnValues: 'ALL_NEW'
+        logger.info("Updated successfull ", todo)
+    } else {
+        logger.error(`Unauthenticated operation`);
     }
-
-    const result = await this.docClient.update(params).promise()
-    console.log(result)
-
-    const updatedTodo: TodoUpdate = result.Attributes as TodoUpdate
-    return updatedTodo
-  }
+}
 
   async uploadUrlImage(todoId: string): Promise<string> {
     console.log('Generating URL')
@@ -119,4 +117,32 @@ export class AllToDoAccess {
 
     return '' as string
   }
+
+  public async createAttachmentUrl(userId: string, todoId: string, attachmentId: string) {
+    const attachmentUrlUtil = new Attachment();
+    const attachmentUrl = `https://${this.s3BucketName}.s3.amazonaws.com/${attachmentId}`;
+
+    console.log("createAttachmentUrl")
+    if (userId) {
+        await this.docClient.update({
+            TableName: this.todoTable,
+            Key: {
+                todoId, userId
+            },
+            UpdateExpression: "set #attachmentUrl = :attachmentUrl",
+            ExpressionAttributeNames: {
+                "#attachmentUrl": "attachmentUrl"
+            },
+            ExpressionAttributeValues: {
+                ":attachmentUrl": attachmentUrl
+            }
+        }).promise();
+
+        logger.info(`Url ${await attachmentUrlUtil.createAttachmentUrl(attachmentId)}`);
+
+        return await attachmentUrlUtil.createAttachmentUrl(attachmentId);
+    } else {
+        logger.error("Unauthenticated operation");
+    }
+}
 }

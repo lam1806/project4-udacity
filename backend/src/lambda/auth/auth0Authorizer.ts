@@ -16,7 +16,7 @@ const logger = createLogger('auth')
 // to verify JWT token signature.
 // To get this URL you need to go to an Auth0 page -> Show Advanced Settings -> Endpoints -> JSON Web Key Set
 const ALGORITHMS: Algorithm[] = ['RS256']
-const jwksUrl = 'https://dev-fwo1hp5jlw2ni6o4.us.auth0.com/.well-known/jwks.json'
+const jwksUrl = 'https://dev-r3fmcnw6arrenwuk.us.auth0.com/.well-known/jwks.json'
 
 
 export const handler = async (

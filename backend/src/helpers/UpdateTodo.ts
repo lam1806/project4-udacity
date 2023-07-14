@@ -1,11 +1,11 @@
 import { parseUserId } from '../auth/utils'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
-import { TodoUpdate } from '../models/TodoUpdate'
+//import { TodoUpdate } from '../models/TodoUpdate'
 import { AllToDoAccess } from './TodosAcess'
 
 const allToDoAccess = new AllToDoAccess()
 
-export function updateToDo(updateTodoRequest: UpdateTodoRequest, todoId: string, jwtToken: string): Promise<TodoUpdate> {
+export const  updateToDo = async (updateTodoRequest: UpdateTodoRequest, todoId: string, jwtToken: string) => {
     const userId = parseUserId(jwtToken);
-    return allToDoAccess.updateToDo(updateTodoRequest, todoId, userId);
+    await allToDoAccess.updateTodo(updateTodoRequest, todoId, userId);
 }
