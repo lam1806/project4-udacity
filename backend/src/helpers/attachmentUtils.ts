@@ -9,7 +9,7 @@ import * as uuid from 'uuid';
 const logger = createLogger('TodosAccess')
 const todoAccessLayer = new AllToDoAccess();
 
-export const createAttachmentUrl = async (userId, todoId) => {
+export const createAttachmentUrl = async (userId: string, todoId: string): Promise<string> => {
     logger.info("userId: ", userId, "todoId: ", todoId);
     const attachmentId = uuid.v4();
 

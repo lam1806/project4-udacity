@@ -47,15 +47,12 @@ export class AllToDoAccess {
 
   public async createToDo(todoItem: TodoItem): Promise<TodoItem> {
     console.log('Creating new todo')
-
     const params: DocumentClient.PutItemInput = {
       TableName: this.todoTable,
       Item: todoItem
     }
-
     await this.docClient.put(params).promise()
     console.log('Todo created successfully')
-
     return todoItem
   }
 
@@ -81,7 +78,6 @@ export class AllToDoAccess {
                 ":done": todo.done
             }
         }).promise();
-
         logger.info("Updated successfull ", todo)
     } else {
         logger.error(`Unauthenticated operation`);
@@ -90,14 +86,12 @@ export class AllToDoAccess {
 
   async uploadUrlImage(todoId: string): Promise<string> {
     console.log('Generating URL')
-
     const url = this.s3Client.getSignedUrl('putObject', {
       Bucket: this.s3BucketName,
       Key: todoId,
       Expires: 1000
     })
     console.log(url)
-
     return url as string
   }
 
@@ -111,11 +105,16 @@ export class AllToDoAccess {
       },
       TableName: this.todoTable
     }
+    try {
+      const result = await this.docClient.delete(params).promise()
+      console.log(result)
 
-    const result = await this.docClient.delete(params).promise()
-    console.log(result)
-
-    return '' as string
+      return '' as string
+    }
+    catch (error) {
+      console.error("An error occurred while deleting the todo:", error);
+      throw error;
+    }  
   }
 
   public async createAttachmentUrl(userId: string, todoId: string, attachmentId: string) {
@@ -124,6 +123,7 @@ export class AllToDoAccess {
 
     console.log("createAttachmentUrl")
     if (userId) {
+      try {
         await this.docClient.update({
             TableName: this.todoTable,
             Key: {
@@ -137,11 +137,15 @@ export class AllToDoAccess {
                 ":attachmentUrl": attachmentUrl
             }
         }).promise();
-
         logger.info(`Url ${await attachmentUrlUtil.createAttachmentUrl(attachmentId)}`);
-
         return await attachmentUrlUtil.createAttachmentUrl(attachmentId);
-    } else {
+      }
+      catch (error){
+        console.error("An error occurred while updating the attachment URL:", error);
+        throw error;
+      }
+    } 
+    else {
         logger.error("Unauthenticated operation");
     }
 }
