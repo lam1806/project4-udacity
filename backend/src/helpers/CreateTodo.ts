@@ -12,13 +12,13 @@ export function createToDo(
   ): Promise<TodoItem> {
     const userId = parseUserId(jwtToken)
     const todoId = uuidv4()
-    const s3BucketName = process.env.ATTACHMENT_S3_BUCKET_VALUE
-    const urlAttachment = `https://${s3BucketName}.s3.amazonaws.com/${todoId}`
+    //const s3BucketName = process.env.ATTACHMENT_S3_BUCKET_VALUE
+    //const urlAttachment = `https://${s3BucketName}.s3.amazonaws.com/${todoId}`
     return allToDoAccess.createToDo({
       userId: userId,
       todoId: todoId,
       createdAt: new Date().getTime().toString(),
-      attachmentUrl: `${urlAttachment}`,
+      attachmentUrl: null,
       done: false,
       ...createTodoRequest
     })
